@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ProfileCard } from "@/components/profile/profile-card"
 import { AchievementsList } from "@/components/profile/achievements-list"
@@ -6,32 +6,29 @@ import { StatsGrid } from "@/components/profile/stats-grid"
 
 export default async function ProfilePage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single()
-
-  const { data: achievements } = await supabase
-    .from("user_achievements")
-    .select("*, achievement(*)")
-    .eq("user_id", user.id)
-    .order("unlocked_at", { ascending: false })
-
-  const { data: allAchievements } = await supabase
-    .from("achievements")
-    .select("*")
-    .order("xp_reward", { ascending: false })
-
-  const { data: xpHistory } = await supabase
-    .from("xp_transactions")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(20)
+  const [
+    { data: profile },
+    { data: achievements },
+    { data: allAchievements },
+    { data: xpHistory },
+  ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase
+      .from("user_achievements")
+      .select("*, achievement(*)")
+      .eq("user_id", user.id)
+      .order("unlocked_at", { ascending: false }),
+    supabase.from("achievements").select("*").order("xp_reward", { ascending: false }),
+    supabase
+      .from("xp_transactions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ])
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">

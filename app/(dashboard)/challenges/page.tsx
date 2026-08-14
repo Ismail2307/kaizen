@@ -1,22 +1,16 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ChallengesGrid } from "@/components/challenges/challenges-grid"
 
 export default async function ChallengesPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
-  const { data: challenges } = await supabase
-    .from("challenges")
-    .select("*")
-    .eq("is_public", true)
-    .order("created_at", { ascending: false })
-
-  const { data: myParticipations } = await supabase
-    .from("challenge_participants")
-    .select("*")
-    .eq("user_id", user.id)
+  const [{ data: challenges }, { data: myParticipations }] = await Promise.all([
+    supabase.from("challenges").select("*").eq("is_public", true).order("created_at", { ascending: false }),
+    supabase.from("challenge_participants").select("*").eq("user_id", user.id),
+  ])
 
   return (
     <div className="space-y-6">

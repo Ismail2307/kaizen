@@ -162,10 +162,15 @@ export function ChallengesGrid({ challenges, myParticipations, userId }: Challen
       {challenges.length === 0 && (
         <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/30 py-20">
           <Zap className="h-10 w-10 text-muted-foreground opacity-30 mb-3" />
-          <h3 className="text-lg font-semibold">No challenges available</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Check back later for new community challenges
-          </p>
+          <Button
+  className="mt-2"
+  onClick={() => window.location.href = "/premium"}
+>
+  Join Premium
+</Button>
+<p className="text-sm text-muted-foreground mt-1">
+  This feature is available for premium users
+</p>
         </div>
       )}
     </div>

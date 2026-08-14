@@ -1,32 +1,38 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
+import { AnalyticsDashboardLazy as AnalyticsDashboard } from "@/components/analytics/analytics-dashboard-lazy"
 
 export default async function AnalyticsPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
-  const { data: xpHistory } = await supabase
-    .from("xp_transactions")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true })
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
 
-  const { data: goals } = await supabase
-    .from("goals")
-    .select("*")
-    .eq("user_id", user.id)
-
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_id", user.id)
-
-  const { data: habitCompletions } = await supabase
-    .from("habit_completions")
-    .select("*")
-    .eq("user_id", user.id)
+  const [
+    { data: xpHistory },
+    { data: goals },
+    { data: tasks },
+    { data: habitCompletions },
+  ] = await Promise.all([
+    // Only the last 14 days are ever shown (XP Over Time chart) — no need to
+    // pull the user's entire XP history every time this page loads.
+    supabase
+      .from("xp_transactions")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("created_at", fourteenDaysAgo)
+      .order("created_at", { ascending: true }),
+    supabase.from("goals").select("*").eq("user_id", user.id),
+    supabase.from("tasks").select("*").eq("user_id", user.id),
+    // Habit Consistency heatmap only shows the last 30 days.
+    supabase
+      .from("habit_completions")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("completed_date", thirtyDaysAgo),
+  ])
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardStats } from "@/components/dashboard/stats"
 import { TodayTasks } from "@/components/dashboard/today-tasks"
@@ -9,9 +9,11 @@ import { KaizenScore } from "@/components/dashboard/kaizen-score"
 
 export default async function DashboardPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
 
   if (!user) redirect("/")
+
+  const today = new Date().toISOString().split("T")[0]
 
   // Fetch all dashboard data in parallel
   const [
@@ -24,7 +26,8 @@ export default async function DashboardPage() {
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "active").order("created_at", { ascending: false }).limit(4),
     supabase.from("tasks").select("*").eq("user_id", user.id).in("status", ["pending", "in_progress"]).order("deadline", { ascending: true }).limit(5),
-    supabase.from("habits").select("*, habit_completions(*)").eq("user_id", user.id).eq("active", true).limit(4),
+    // HabitsOverview only checks isCompletedToday, so only today's row is needed here.
+    supabase.from("habits").select("*, habit_completions(*)").eq("user_id", user.id).eq("active", true).eq("habit_completions.completed_date", today).limit(4),
     supabase.from("user_achievements").select("*, achievement(*)").eq("user_id", user.id).order("unlocked_at", { ascending: false }).limit(3),
   ])
 

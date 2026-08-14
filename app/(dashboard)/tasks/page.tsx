@@ -1,23 +1,16 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { TaskManager } from "@/components/tasks/task-manager"
 
 export default async function TasksPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-
-  const { data: goals } = await supabase
-    .from("goals")
-    .select("id, title")
-    .eq("user_id", user.id)
-    .eq("status", "active")
+  const [{ data: tasks }, { data: goals }] = await Promise.all([
+    supabase.from("tasks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("goals").select("id, title").eq("user_id", user.id).eq("status", "active"),
+  ])
 
   return (
     <div className="space-y-6">

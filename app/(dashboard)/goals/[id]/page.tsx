@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Edit } from "lucide-react"
@@ -16,7 +16,7 @@ interface GoalDetailPageProps {
 
 export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
   const { data: goal } = await supabase

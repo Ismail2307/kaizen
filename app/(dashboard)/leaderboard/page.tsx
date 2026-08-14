@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { LeaderboardTable } from "@/components/leaderboard/leaderboard-table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,17 +9,10 @@ export default async function LeaderboardPage({
   searchParams: { tab?: string }
 }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
   const tab = searchParams.tab || "global"
-
-  // Get current user's profile for context
-  const { data: myProfile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single()
 
   // Fetch leaderboard data
   let query = supabase
@@ -35,7 +28,10 @@ export default async function LeaderboardPage({
     // Simplified: just show top by XP for now
   }
 
-  const { data: entries } = await query
+  const [{ data: myProfile }, { data: entries }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    query,
+  ])
 
   return (
     <div className="space-y-6">

@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { WeeklyReviewCard } from "@/components/weekly-review/weekly-review-card"
 
 export default async function WeeklyReviewPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
   const now = new Date()
@@ -18,40 +18,44 @@ export default async function WeeklyReviewPage() {
   const weekStartStr = weekStart.toISOString()
   const weekEndStr = weekEnd.toISOString()
 
-  const { data: tasksCompleted } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status", "completed")
-    .gte("completed_at", weekStartStr)
-    .lte("completed_at", weekEndStr)
-
-  const { data: xpEarned } = await supabase
-    .from("xp_transactions")
-    .select("amount")
-    .eq("user_id", user.id)
-    .gte("created_at", weekStartStr)
-    .lte("created_at", weekEndStr)
-
-  const { data: habitsCompleted } = await supabase
-    .from("habit_completions")
-    .select("*")
-    .eq("user_id", user.id)
-    .gte("completed_date", weekStart.toISOString().split("T")[0])
-    .lte("completed_date", weekEnd.toISOString().split("T")[0])
-
-  const { data: goalsProgressed } = await supabase
-    .from("goals")
-    .select("*")
-    .eq("user_id", user.id)
-    .gte("updated_at", weekStartStr)
-    .lte("updated_at", weekEndStr)
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("streak, kaizen_score, total_tasks_completed, total_goals_completed, total_habits_completed")
-    .eq("id", user.id)
-    .single()
+  const [
+    { data: tasksCompleted },
+    { data: xpEarned },
+    { data: habitsCompleted },
+    { data: goalsProgressed },
+    { data: profile },
+  ] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+      .gte("completed_at", weekStartStr)
+      .lte("completed_at", weekEndStr),
+    supabase
+      .from("xp_transactions")
+      .select("amount")
+      .eq("user_id", user.id)
+      .gte("created_at", weekStartStr)
+      .lte("created_at", weekEndStr),
+    supabase
+      .from("habit_completions")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("completed_date", weekStart.toISOString().split("T")[0])
+      .lte("completed_date", weekEnd.toISOString().split("T")[0]),
+    supabase
+      .from("goals")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("updated_at", weekStartStr)
+      .lte("updated_at", weekEndStr),
+    supabase
+      .from("profiles")
+      .select("streak, kaizen_score, total_tasks_completed, total_goals_completed, total_habits_completed")
+      .eq("id", user.id)
+      .single(),
+  ])
 
   const totalXp = xpEarned?.reduce((sum, tx) => sum + tx.amount, 0) || 0
   const taskCount = tasksCompleted?.length || 0

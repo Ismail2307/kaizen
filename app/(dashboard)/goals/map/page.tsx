@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { GoalMap } from "@/components/goals/goal-map"
+import { GoalMapLazy as GoalMap } from "@/components/goals/goal-map-lazy"
 
 export default async function GoalMapPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await getUser()
   if (!user) redirect("/")
 
   const { data: goals } = await supabase

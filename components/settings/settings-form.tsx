@@ -159,7 +159,11 @@ export function SettingsForm({ profile }: SettingsFormProps) {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setTheme("dark")}
+                  onClick={() => {
+                    setTheme("dark")
+                    document.documentElement.classList.remove("light")
+                    localStorage.setItem("kaizen-theme", "dark")
+                  }}
                   className={`flex items-center gap-2 rounded-lg border px-4 py-3 transition-colors ${
                     theme === "dark"
                       ? "border-kaizen-500 bg-kaizen-500/10"
@@ -171,7 +175,11 @@ export function SettingsForm({ profile }: SettingsFormProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setTheme("light")}
+                  onClick={() => {
+                    setTheme("light")
+                    document.documentElement.classList.add("light")
+                    localStorage.setItem("kaizen-theme", "light")
+                  }}
                   className={`flex items-center gap-2 rounded-lg border px-4 py-3 transition-colors ${
                     theme === "light"
                       ? "border-kaizen-500 bg-kaizen-500/10"

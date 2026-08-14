@@ -16,7 +16,7 @@ export default async function Home() {
         <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-kaizen-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-kaizen-700/10 blur-3xl" />
       </div>
-      <div className="relative z-10 w-full">
+      <div className="relative z-10 w-full flex align-center justify-center">
         <LoginForm />
       </div>
     </div>
